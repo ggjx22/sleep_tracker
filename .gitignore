@@ -15,3 +15,6 @@ venv.bak/
 
 # OS files
 **/.DS_Store
+
+# secrets
+.streamlit/secrets.toml
