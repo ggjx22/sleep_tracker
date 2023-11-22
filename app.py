@@ -3,7 +3,10 @@ import src.utils_form as ui_form
 import streamlit as st
 
 # display title and description
-st.title('Sleep Tracker Web App')
+colT1,colT2 = st.columns([1,5])
+with colT2:
+    st.title('Sleep Tracker Web App')
+
 st.markdown('Enter your sleep details below.')
 
 # fetch data from google sheets
