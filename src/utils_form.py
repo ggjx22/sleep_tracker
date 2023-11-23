@@ -75,3 +75,56 @@ def user_form_submission(data, date, sleep_duration, sleep_quality, sleep_grade,
     conn.update(worksheet='Sheet1', data=updated_data)
     
     st.write('Sleep details submitted successfully!')
+    
+    
+def user_amend_form(data):
+    # create a dropdown menu to select a date to amend
+    sorted_date = data['Date'].sort_values(ascending=False)
+    selected_date = st.selectbox('Select a date to amend your details', sorted_date)
+    
+    # selected_date = '2023-11-23'
+    
+    # retrieve the sleep details for the selected date
+    selected_entry = data[data['Date'] == selected_date].iloc[0]
+    
+    # place original entry details in a dictionary
+    original_entry = {
+        'Date': selected_entry['Date'],
+        'Length': selected_entry['Length'],
+        'Quality': selected_entry['Quality'],
+        'Overall': selected_entry['Overall'],
+        'Remarks': selected_entry['Remarks']
+    }
+    
+    # display a form pre-filled with original entry details for modification
+    with st.form(key='amend_form'):
+        # create field 1 for date amendment
+        date = st.date_input(
+            label='Date Recorded in YYYY-MM-DD',
+            value=pd.to_datetime(original_entry['Date'])
+        )
+        # date = date.strftime('%Y-%m-%d')
+        
+        # create field 2 for sleep length amendment
+        sleep_duration = st.selectbox(
+            'Sleep Duration*',
+            options=constants.SLEEP_HOURS,
+            index=constants.SLEEP_HOURS.index(original_entry['Length'])
+        )
+        
+        # create field 3 for sleep quality amendment
+        sleep_quality = st.selectbox(
+            'Sleep Quality*',
+            options=constants.SLEEP_QUALITY,
+            index=constants.SLEEP_QUALITY.index(original_entry['Quality'])
+        )
+        
+        # create field 4 for sleep grade amendment
+        sleep_grade = st.selectbox(
+            'Sleep Grade*',
+            options=constants.SLEEP_GRADE,
+            index=constants.SLEEP_GRADE.index(original_entry['Overall'])
+        )
+        
+        # create field 5 for user remarks
+        remarks = st.text_area(label='Remarks', value=original_entry['Remarks'])

@@ -11,8 +11,10 @@ style.markdown('Enter your sleep details below')
 # fetch data from google sheets
 data = gs.fetch_data()
 
-# create user form for input and submission into google drive
-ui_form.create_user_form(data)
+ui_form.user_amend_form(data)
 
-# web app version
-style.text('v1.0.1')
+# # create user form for input and submission into google drive
+# ui_form.create_user_form(data)
+
+# # web app version
+# style.text('v1.0.1')
