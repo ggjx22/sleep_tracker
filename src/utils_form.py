@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import src.utils_gsheets as gs
 import src.config as constants
+import src.utils_styling as style
 
 def create_user_form(data):
     # create the user input form
@@ -23,7 +24,7 @@ def create_user_form(data):
         remarks = st.text_area(label='Remarks')
         
         # mark mandatory fields
-        st.markdown('**Required Fields*')
+        style.markdown('**Required Fields')
 
         # create submit button
         submit_button = st.form_submit_button(label='Submit Sleep Details')
@@ -82,10 +83,11 @@ def user_amend_form(data):
     sorted_date = data['Date'].sort_values(ascending=False)
     selected_date = st.selectbox('Select a date to amend your details', sorted_date)
     
-    # selected_date = '2023-11-23'
-    
     # retrieve the sleep details for the selected date
     selected_entry = data[data['Date'] == selected_date].iloc[0]
+    
+    # fill empty entries with 'NA' to avoid code break in st.form()
+    selected_entry.fillna('NA', inplace=True)
     
     # place original entry details in a dictionary
     original_entry = {
@@ -98,33 +100,70 @@ def user_amend_form(data):
     
     # display a form pre-filled with original entry details for modification
     with st.form(key='amend_form'):
-        # create field 1 for date amendment
-        date = st.date_input(
-            label='Date Recorded in YYYY-MM-DD',
-            value=pd.to_datetime(original_entry['Date'])
-        )
-        # date = date.strftime('%Y-%m-%d')
-        
         # create field 2 for sleep length amendment
-        sleep_duration = st.selectbox(
+        new_sleep_duration = st.selectbox(
             'Sleep Duration*',
             options=constants.SLEEP_HOURS,
             index=constants.SLEEP_HOURS.index(original_entry['Length'])
         )
         
         # create field 3 for sleep quality amendment
-        sleep_quality = st.selectbox(
+        new_sleep_quality = st.selectbox(
             'Sleep Quality*',
             options=constants.SLEEP_QUALITY,
             index=constants.SLEEP_QUALITY.index(original_entry['Quality'])
         )
         
         # create field 4 for sleep grade amendment
-        sleep_grade = st.selectbox(
+        new_sleep_grade = st.selectbox(
             'Sleep Grade*',
             options=constants.SLEEP_GRADE,
             index=constants.SLEEP_GRADE.index(original_entry['Overall'])
         )
         
         # create field 5 for user remarks
-        remarks = st.text_area(label='Remarks', value=original_entry['Remarks'])
+        new_remarks = st.text_area(label='Remarks', value=original_entry['Remarks'])
+        
+        # mark mandatory fields
+        style.markdown('**Required Fields')
+        
+        # create submit button
+        submit_button = st.form_submit_button(label='Submit Your New Sleep Details')
+        
+        # action taken after form submission
+        if submit_button:
+            user_amend_form_submission(
+                old_entry=original_entry,
+                data=data,
+                date=selected_date,
+                sleep_duration=new_sleep_duration,
+                sleep_quality=new_sleep_quality,
+                sleep_grade=new_sleep_grade,
+                remarks=new_remarks
+            )
+            
+
+def user_amend_form_submission(old_entry, data, date, sleep_duration, sleep_quality, sleep_grade, remarks):
+    # make a duplicate copy of data
+    amended_data = old_entry.copy()
+    
+    # update the amended data with the new sleep details
+    amended_data['Length'] = sleep_duration
+    amended_data['Quality'] = sleep_quality
+    amended_data['Overall'] = sleep_grade
+    amended_data['Remarks'] = remarks
+        
+    # convert the amended_data dictionary to a dataframe
+    amended_sleep_data = pd.DataFrame(amended_data, index=[0])
+    
+    # update the selected_date entry with amended_sleep_data
+    data[data['Date'] == date] = amended_sleep_data.iloc[0].values
+    
+    # establish a google sheets connection
+    conn = gs.init_connection()
+    
+    # update google sheets with amended_sleep_data
+    conn.update(worksheet='Sheet1', data=data)
+    
+    st.write('Sleep details amended successfully!')
+    
