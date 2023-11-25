@@ -17,3 +17,7 @@ def markdown(text):
 def text(text):
     # display text
     st.text(text)
+    
+def write(text):
+    # display statement
+    st.write(text)

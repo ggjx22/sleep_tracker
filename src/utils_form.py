@@ -27,7 +27,7 @@ def create_user_form(data):
         remarks = st.text_area(label='Remarks')
         
         # mark mandatory fields
-        style.markdown('**Required Fields')
+        style.markdown('*Required Fields')
 
         # create submit button
         submit_button = st.form_submit_button(label='Submit Sleep Details')
@@ -56,8 +56,8 @@ def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, 
         # check the type of sleep
         if sleep_type == data[data['Date'] == date]['Type'].iloc[0]:
             st.warning(
-                f'Similar sleep details for this date already recorded. '
-                f'Head over to the Amend Sleep Details page if you will like to edit your details.'
+                f'Sleep details for this date already recorded.'
+                f'Head over to the Amend Details page if you will like to edit any of your details.'
             )
             st.stop()
         else:
@@ -99,95 +99,162 @@ def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, 
     # update google sheets with the updated_data
     conn.update(worksheet='Sheet1', data=updated_data)
     
-    st.write('Sleep details submitted successfully!')
+    style.write('Sleep details submitted successfully!')
     
     
 def user_amend_form(data):
     # create a dropdown menu to select a date to amend
-    sorted_date = data['Date'].sort_values(ascending=False)
+    sorted_date = data['Date'].sort_values(ascending=False).unique()
     selected_date = st.selectbox('Select a date to amend your details', sorted_date)
     
     # retrieve the sleep details for the selected date
-    selected_entry = data[data['Date'] == selected_date].iloc[0]
+    selected_entry = (
+        data
+        .loc[(data['Date'] == selected_date), :]
+        .fillna('NA')
+    )
     
-    # fill empty entries with 'NA' to avoid code break in st.form()
-    selected_entry.fillna('NA', inplace=True)
-    
-    # place original entry details in a dictionary
-    original_entry = {
-        'Date': selected_entry['Date'],
-        'Length': selected_entry['Length'],
-        'Quality': selected_entry['Quality'],
-        'Overall': selected_entry['Overall'],
-        'Remarks': selected_entry['Remarks']
-    }
-    
-    # display a form pre-filled with original entry details for modification
-    with st.form(key='amend_form'):
-        # create field 2 for sleep length amendment
-        new_sleep_duration = st.selectbox(
-            'Sleep Duration*',
-            options=constants.SLEEP_HOURS,
-            index=constants.SLEEP_HOURS.index(original_entry['Length'])
+    # form changes based on the number of entries for the selected date
+    if len(selected_entry) > 1:
+        # table-like editor
+        style.write('You have multiple entries during this day. Select the details of which you want to edit.')
+        
+        # # convert Date column to datetime format
+        # selected_entry['Date'] = selected_entry['Date'].astype('datetime64[ns]')
+        
+        amended_entry = st.data_editor(
+            data=selected_entry,
+            use_container_width=True,
+            hide_index=True,
+            num_rows='dynamic',
+            column_config={
+                'Date': st.column_config.Column(
+                    label='Date*',
+                    disabled=True
+                ),
+                'Type': st.column_config.SelectboxColumn(
+                    label='Type*',
+                    options=constants.SLEEP_TYPE,
+                    required=True
+                ),
+                'Length': st.column_config.SelectboxColumn(
+                    label='Length*',
+                    options=constants.SLEEP_HOURS,
+                    required=True
+                ),
+                'Quality': st.column_config.SelectboxColumn(
+                    label='Quality*',
+                    options=constants.SLEEP_QUALITY,
+                    required=True
+                ),
+                'Overall': st.column_config.SelectboxColumn(
+                    label='Overall*',
+                    options=constants.SLEEP_GRADE,
+                    required=True
+                ),
+                'Remarks': st.column_config.TextColumn()
+            }
         )
         
-        # create field 3 for sleep quality amendment
-        new_sleep_quality = st.selectbox(
-            'Sleep Quality*',
-            options=constants.SLEEP_QUALITY,
-            index=constants.SLEEP_QUALITY.index(original_entry['Quality'])
-        )
+        style.markdown('*Required Fields')
         
-        # create field 4 for sleep grade amendment
-        new_sleep_grade = st.selectbox(
-            'Sleep Grade*',
-            options=constants.SLEEP_GRADE,
-            index=constants.SLEEP_GRADE.index(original_entry['Overall'])
-        )
+        # submit the amended entry
+        submit_button = st.button('Submit Your New Sleep Details')
         
-        # create field 5 for user remarks
-        new_remarks = st.text_area(label='Remarks', value=original_entry['Remarks'])
-        
-        # mark mandatory fields
-        style.markdown('**Required Fields')
-        
-        # create submit button
-        submit_button = st.form_submit_button(label='Submit Your New Sleep Details')
-        
-        # action taken after form submission
         if submit_button:
             user_amend_form_submission(
-                old_entry=original_entry,
                 data=data,
-                date=selected_date,
-                sleep_duration=new_sleep_duration,
-                sleep_quality=new_sleep_quality,
-                sleep_grade=new_sleep_grade,
-                remarks=new_remarks
+                entry_date=selected_date,
+                new_entry=amended_entry,
+            )
+    
+    else:
+        original_entry = selected_entry.iloc[0].to_dict()
+        
+        # display a form pre-filled with original entry details for modification
+        with st.form(key='amend_form'):
+            # create field 1 for sleep type amendment
+            new_sleep_type = st.selectbox(
+                'Sleep Type*',
+                options=constants.SLEEP_TYPE,
+                index=constants.SLEEP_TYPE.index(original_entry['Type'])
             )
             
+            # create field 2 for sleep length amendment
+            new_sleep_duration = st.selectbox(
+                'Sleep Duration*',
+                options=constants.SLEEP_HOURS,
+                index=constants.SLEEP_HOURS.index(original_entry['Length'])
+            )
+            
+            # create field 3 for sleep quality amendment
+            new_sleep_quality = st.selectbox(
+                'Sleep Quality*',
+                options=constants.SLEEP_QUALITY,
+                index=constants.SLEEP_QUALITY.index(original_entry['Quality'])
+            )
+            
+            # create field 4 for sleep grade amendment
+            new_sleep_grade = st.selectbox(
+                'Sleep Grade*',
+                options=constants.SLEEP_GRADE,
+                index=constants.SLEEP_GRADE.index(original_entry['Overall'])
+            )
+            
+            # create field 5 for user remarks
+            new_remarks = st.text_area(label='Remarks', value=original_entry['Remarks'])
+            
+            # mark mandatory fields
+            style.markdown('*Required Fields')
+            
+            # put amended details into a dictionary
+            amended_entry = {
+                'Date': selected_date,
+                'Type': new_sleep_type,
+                'Length': new_sleep_duration,
+                'Quality': new_sleep_quality,
+                'Overall': new_sleep_grade,
+                'Remarks': new_remarks,
+            }
+            
+            # create submit button
+            submit_button = st.form_submit_button(label='Submit Your New Sleep Details')
+                
+            # action taken after form submission
+            if submit_button:
+                user_amend_form_submission(
+                    data=data,
+                    entry_date=selected_date,
+                    new_entry=amended_entry,
 
-def user_amend_form_submission(old_entry, data, date, sleep_duration, sleep_quality, sleep_grade, remarks):
-    # make a duplicate copy of data
-    amended_data = old_entry.copy()
-    
-    # update the amended data with the new sleep details
-    amended_data['Length'] = sleep_duration
-    amended_data['Quality'] = sleep_quality
-    amended_data['Overall'] = sleep_grade
-    amended_data['Remarks'] = remarks
+                )
+            
+
+def user_amend_form_submission(data, entry_date, new_entry):
+    # check datatype of new_entry
+    if type(new_entry) == pd.DataFrame:
+        # filter away old_entry from data using entry_date
+        data = data[data['Date'] != entry_date]
         
-    # convert the amended_data dictionary to a dataframe
-    amended_sleep_data = pd.DataFrame(amended_data, index=[0])
-    
-    # update the selected_date entry with amended_sleep_data
-    data[data['Date'] == date] = amended_sleep_data.iloc[0].values
-    
+        # concat new_entry to data
+        data = (
+            pd
+            .concat([data, new_entry], axis=0, ignore_index=True)
+            .sort_values(by='Date', ascending=True)
+        )
+        
+    elif type(new_entry) == dict:
+        # convert dictionary to dataframe
+        new_entry = pd.DataFrame(new_entry, index=[0])
+        
+        # update the selected_date entry with amended_sleep_data
+        data[data['Date'] == entry_date] = new_entry.iloc[0].values
+        
     # establish a google sheets connection
     conn = gs.init_connection()
     
-    # update google sheets with amended_sleep_data
+    # update google sheets
     conn.update(worksheet='Sheet1', data=data)
     
-    st.write('Sleep details amended successfully!')
+    style.write('New sleep details amended successfully!')
     
