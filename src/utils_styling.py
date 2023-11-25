@@ -2,7 +2,11 @@ import streamlit as st
 
 def title(text):
     # display title
-    colT1,colT2 = st.columns([1,5])
+    st.title(text)
+
+def title_algin(text, column_position):
+    # display title
+    colT1,colT2 = st.columns(column_position)
     with colT2:
         st.title(text)
         
