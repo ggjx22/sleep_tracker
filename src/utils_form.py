@@ -11,16 +11,19 @@ def create_user_form(data):
         date = st.date_input(label='Date Recorded in YYYY-MM-DD')
         date = date.strftime('%Y-%m-%d')
         
+        # create field 3 for sleep type
+        sleep_type = st.selectbox('Sleep Type*', options=constants.SLEEP_TYPE, index=None)
+        
         # create field 2 for sleep length
         sleep_duration = st.selectbox('Sleep Duration*', options=constants.SLEEP_HOURS, index=None)
         
-        # create field 3 for sleep quality
+        # create field 4 for sleep quality
         sleep_quality = st.selectbox('Sleep Quality*', options=constants.SLEEP_QUALITY, index=None)
         
-        # create field 4 for sleep grade
+        # create field 5 for sleep grade
         sleep_grade = st.selectbox('Sleep Grade*', options=constants.SLEEP_GRADE, index=None)
         
-        # create field 5 for user remarks
+        # create field 6 for user remarks
         remarks = st.text_area(label='Remarks')
         
         # mark mandatory fields
@@ -34,6 +37,7 @@ def create_user_form(data):
             user_form_submission(
                 data=data,
                 date=date,
+                sleep_type=sleep_type,
                 sleep_duration=sleep_duration,
                 sleep_quality=sleep_quality,
                 sleep_grade=sleep_grade,
@@ -41,23 +45,43 @@ def create_user_form(data):
             )
             
             
-def user_form_submission(data, date, sleep_duration, sleep_quality, sleep_grade, remarks):
+def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, sleep_grade, remarks):   
     # check if all fields are submitted
-    if not sleep_duration or not sleep_quality or not sleep_grade:
+    if not sleep_type or not sleep_duration or not sleep_quality or not sleep_grade:
         st.warning('Please fill in all required fields.')
         st.stop()
         
     # check if the date is already recorded
     elif (data['Date'].astype(str) == date).any():
-        st.warning('Sleep details for this date already recorded.')
-        st.stop()
-        
+        # check the type of sleep
+        if sleep_type == data[data['Date'] == date]['Type'].iloc[0]:
+            st.warning(
+                f'Similar sleep details for this date already recorded. '
+                f'Head over to the Amend Sleep Details page if you will like to edit your details.'
+            )
+            st.stop()
+        else:
+            # allow entry of different sleep type for the same date
+            sleep_data = pd.DataFrame(
+            [
+                {
+                    'Date': date,
+                    'Type': sleep_type,
+                    'Length': sleep_duration,
+                    'Quality': sleep_quality,
+                    'Overall': sleep_grade,
+                    'Remarks': remarks
+                }
+            ]
+        )
+            
     # append the new sleep data to the existing data
     else:
         sleep_data = pd.DataFrame(
             [
                 {
                     'Date': date,
+                    'Type': sleep_type,
                     'Length': sleep_duration,
                     'Quality': sleep_quality,
                     'Overall': sleep_grade,

@@ -11,3 +11,5 @@ SLEEP_GRADE = [
     'C+', 'C', 'C-',
     'D', 'E', 'F', 'NA'
 ]
+
+SLEEP_TYPE = ['Overnight', 'Nap']
