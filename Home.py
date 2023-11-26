@@ -1,5 +1,4 @@
 import src.utils_styling as style
-
 import streamlit as st
 
 st.set_page_config(

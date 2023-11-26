@@ -44,7 +44,7 @@ def create_user_form(data):
                 remarks=remarks
             )
             
-            
+@st.cache_data            
 def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, sleep_grade, remarks):   
     # check if all fields are submitted
     if not sleep_type or not sleep_duration or not sleep_quality or not sleep_grade:
@@ -56,7 +56,7 @@ def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, 
         # check the type of sleep
         if sleep_type == data[data['Date'] == date]['Type'].iloc[0]:
             st.warning(
-                f'Sleep details for this date already recorded.'
+                f'You have already recorded your details for an Overnight sleep on this date. '
                 f'Head over to the Amend Details page if you will like to edit any of your details.'
             )
             st.stop()
@@ -101,11 +101,13 @@ def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, 
     
     style.write('Sleep details submitted successfully!')
     
-    
+
 def user_amend_form(data):
     # create a dropdown menu to select a date to amend
     sorted_date = data['Date'].sort_values(ascending=False).unique()
     selected_date = st.selectbox('Select a date to amend your details', sorted_date)
+    
+    style.write(f'Displaying your records for {selected_date}.')
     
     # retrieve the sleep details for the selected date
     selected_entry = (
@@ -229,7 +231,7 @@ def user_amend_form(data):
 
                 )
             
-
+@st.cache_data
 def user_amend_form_submission(data, entry_date, new_entry):
     # check datatype of new_entry
     if type(new_entry) == pd.DataFrame:
