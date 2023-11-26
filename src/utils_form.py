@@ -1,10 +1,13 @@
 import streamlit as st
 import pandas as pd
 import src.utils_gsheets as gs
-import src.config as constants
+from src.config import constants
 import src.utils_styling as style
 
 def create_user_form(data):
+    # load in options for entry
+    SLEEP_HOURS, SLEEP_QUALITY, SLEEP_GRADE, SLEEP_TYPE = constants()
+    
     # create the user input form
     with st.form(key='input_form'):
         # create field 1 for date input
@@ -12,16 +15,16 @@ def create_user_form(data):
         date = date.strftime('%Y-%m-%d')
         
         # create field 3 for sleep type
-        sleep_type = st.selectbox('Sleep Type*', options=constants.SLEEP_TYPE, index=None)
+        sleep_type = st.selectbox('Sleep Type*', options=SLEEP_TYPE, index=None)
         
         # create field 2 for sleep length
-        sleep_duration = st.selectbox('Sleep Duration*', options=constants.SLEEP_HOURS, index=None)
+        sleep_duration = st.selectbox('Sleep Duration*', options=SLEEP_HOURS, index=None)
         
         # create field 4 for sleep quality
-        sleep_quality = st.selectbox('Sleep Quality*', options=constants.SLEEP_QUALITY, index=None)
+        sleep_quality = st.selectbox('Sleep Quality*', options=SLEEP_QUALITY, index=None)
         
         # create field 5 for sleep grade
-        sleep_grade = st.selectbox('Sleep Grade*', options=constants.SLEEP_GRADE, index=None)
+        sleep_grade = st.selectbox('Sleep Grade*', options=SLEEP_GRADE, index=None)
         
         # create field 6 for user remarks
         remarks = st.text_area(label='Remarks')
@@ -116,6 +119,9 @@ def user_amend_form(data):
         .fillna('NA')
     )
     
+    # load in options for entry
+    SLEEP_HOURS, SLEEP_QUALITY, SLEEP_GRADE, SLEEP_TYPE = constants()
+    
     # form changes based on the number of entries for the selected date
     if len(selected_entry) > 1:
         # table-like editor
@@ -136,22 +142,22 @@ def user_amend_form(data):
                 ),
                 'Type': st.column_config.SelectboxColumn(
                     label='Type*',
-                    options=constants.SLEEP_TYPE,
+                    options=SLEEP_TYPE,
                     required=True
                 ),
                 'Length': st.column_config.SelectboxColumn(
                     label='Length*',
-                    options=constants.SLEEP_HOURS,
+                    options=SLEEP_HOURS,
                     required=True
                 ),
                 'Quality': st.column_config.SelectboxColumn(
                     label='Quality*',
-                    options=constants.SLEEP_QUALITY,
+                    options=SLEEP_QUALITY,
                     required=True
                 ),
                 'Overall': st.column_config.SelectboxColumn(
                     label='Overall*',
-                    options=constants.SLEEP_GRADE,
+                    options=SLEEP_GRADE,
                     required=True
                 ),
                 'Remarks': st.column_config.TextColumn()
@@ -178,29 +184,29 @@ def user_amend_form(data):
             # create field 1 for sleep type amendment
             new_sleep_type = st.selectbox(
                 'Sleep Type*',
-                options=constants.SLEEP_TYPE,
-                index=constants.SLEEP_TYPE.index(original_entry['Type'])
+                options=SLEEP_TYPE,
+                index=SLEEP_TYPE.index(original_entry['Type'])
             )
             
             # create field 2 for sleep length amendment
             new_sleep_duration = st.selectbox(
                 'Sleep Duration*',
-                options=constants.SLEEP_HOURS,
-                index=constants.SLEEP_HOURS.index(original_entry['Length'])
+                options=SLEEP_HOURS,
+                index=SLEEP_HOURS.index(original_entry['Length'])
             )
             
             # create field 3 for sleep quality amendment
             new_sleep_quality = st.selectbox(
                 'Sleep Quality*',
-                options=constants.SLEEP_QUALITY,
-                index=constants.SLEEP_QUALITY.index(original_entry['Quality'])
+                options=SLEEP_QUALITY,
+                index=SLEEP_QUALITY.index(original_entry['Quality'])
             )
             
             # create field 4 for sleep grade amendment
             new_sleep_grade = st.selectbox(
                 'Sleep Grade*',
-                options=constants.SLEEP_GRADE,
-                index=constants.SLEEP_GRADE.index(original_entry['Overall'])
+                options=SLEEP_GRADE,
+                index=SLEEP_GRADE.index(original_entry['Overall'])
             )
             
             # create field 5 for user remarks
