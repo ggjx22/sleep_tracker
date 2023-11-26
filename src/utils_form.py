@@ -47,16 +47,18 @@ def create_user_form(data):
                 remarks=remarks
             )
             
-@st.cache_data            
+            
+@st.cache_data
 def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, sleep_grade, remarks):   
     # check if all fields are submitted
-    if not sleep_type or not sleep_duration or not sleep_quality or not sleep_grade:
+    if not sleep_type or sleep_duration is None or sleep_quality is None or not sleep_grade:
         st.warning('Please fill in all required fields.')
         st.stop()
         
     # check if the date is already recorded
     elif (data['Date'].astype(str) == date).any():
         # check the type of sleep
+        # if 'Overnight' in data[data['Date'] == date]['Type'].unique():
         if sleep_type == data[data['Date'] == date]['Type'].iloc[0]:
             st.warning(
                 f'You have already recorded your details for an Overnight sleep on this date. '
@@ -66,20 +68,21 @@ def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, 
         else:
             # allow entry of different sleep type for the same date
             sleep_data = pd.DataFrame(
-            [
-                {
-                    'Date': date,
-                    'Type': sleep_type,
-                    'Length': sleep_duration,
-                    'Quality': sleep_quality,
-                    'Overall': sleep_grade,
-                    'Remarks': remarks
-                }
-            ]
-        )
+                [
+                    {
+                        'Date': date,
+                        'Type': sleep_type,
+                        'Length': sleep_duration,
+                        'Quality': sleep_quality,
+                        'Overall': sleep_grade,
+                        'Remarks': remarks
+                    }
+                ]
+            )
             
-    # append the new sleep data to the existing data
+    # create dataframe for a totally new sleep details
     else:
+        print('No entries has been recorded on this day yet.')
         sleep_data = pd.DataFrame(
             [
                 {
@@ -93,8 +96,8 @@ def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, 
             ]
         )
     
-    # add new sleep_data to existing_data
-    updated_data = pd.concat([data, sleep_data], ignore_index=True)
+    # add new entry to data
+    updated_data = pd.concat([data, sleep_data], axis=0, ignore_index=True)
     
     # establish a google sheets connection
     conn = gs.init_connection()
