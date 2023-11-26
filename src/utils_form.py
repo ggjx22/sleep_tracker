@@ -58,8 +58,7 @@ def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, 
     # check if the date is already recorded
     elif (data['Date'].astype(str) == date).any():
         # check the type of sleep
-        # if 'Overnight' in data[data['Date'] == date]['Type'].unique():
-        if sleep_type == data[data['Date'] == date]['Type'].iloc[0]:
+        if sleep_type == 'Overnight' and 'Overnight' in data[data['Date'] == date]['Type'].unique():
             st.warning(
                 f'You have already recorded your details for an Overnight sleep on this date. '
                 f'Head over to the Amend Details page if you will like to edit any of your details.'
