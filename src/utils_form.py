@@ -1,12 +1,13 @@
 import streamlit as st
 import pandas as pd
+from datetime import time, timedelta, datetime
 import src.utils_gsheets as gs
 from src.config import constants
 import src.utils_styling as style
 
 def create_user_form(data):
     # load in options for entry
-    SLEEP_HOURS, SLEEP_QUALITY, SLEEP_GRADE, SLEEP_TYPE = constants()
+    SLEEP_QUALITY, SLEEP_GRADE, SLEEP_TYPE, SLEEP_START, SLEEP_STOP = constants()
     
     # create the user input form
     with st.form(key='input_form'):
@@ -14,17 +15,30 @@ def create_user_form(data):
         date = st.date_input(label='Date Recorded in YYYY-MM-DD')
         date = date.strftime('%Y-%m-%d')
         
-        # create field 3 for sleep type
-        sleep_type = st.selectbox('Sleep Type*', options=SLEEP_TYPE, index=None)
+        # create field 2 for sleep type
+        sleep_type = st.selectbox(label='Sleep Type*', options=SLEEP_TYPE, index=None)
         
-        # create field 2 for sleep length
-        sleep_duration = st.selectbox('Sleep Duration*', options=SLEEP_HOURS, index=None)
+        # create field 3 for sleep duration 
+        sleep_range = st.slider(
+            label='Sleep Duration*',
+            min_value=SLEEP_START,
+            max_value=SLEEP_STOP,
+            format='HH:mm',
+            value=((SLEEP_START + timedelta(hours=5.5)), SLEEP_STOP - timedelta(hours=9.5)),
+            step=timedelta(minutes=1)
+        )
         
         # create field 4 for sleep quality
-        sleep_quality = st.selectbox('Sleep Quality*', options=SLEEP_QUALITY, index=None)
+        sleep_quality = st.slider(
+            label='Sleep Quality',
+            min_value=SLEEP_QUALITY[0],
+            max_value=SLEEP_QUALITY[-2],
+            value=5.0, 
+            step=0.5
+        )
         
         # create field 5 for sleep grade
-        sleep_grade = st.selectbox('Sleep Grade*', options=SLEEP_GRADE, index=None)
+        sleep_grade = st.select_slider(label='Sleep Grade*', options=SLEEP_GRADE, value='C+')
         
         # create field 6 for user remarks
         remarks = st.text_area(label='Remarks')
@@ -37,6 +51,15 @@ def create_user_form(data):
         
         # actions taken after form submission
         if submit_button:
+            # tells the user how long they have slept
+            sleep_time = sleep_range[1] - sleep_range[0]
+            total_mins = sleep_time.total_seconds() / 60
+            hours = int(total_mins // 60)
+            mins = int(total_mins % 60)
+            
+            # convert sleep time into floats for form submission
+            sleep_duration = round(sleep_time.total_seconds() / 3600, 1)
+            
             user_form_submission(
                 data=data,
                 date=date,
@@ -47,6 +70,17 @@ def create_user_form(data):
                 remarks=remarks
             )
             
+            if hours >= 16:
+                style.write(f'Are you a polar bear? Because you have hibernated for {hours} hours and {mins} minutes.')
+            elif hours >= 12:
+                style.write(f'Sleeping beauty are you. You have slept for {hours} hours and {mins} minutes.')
+            elif hours >= 8:
+                style.write(f'Well Done! You have slept for {hours} hours and {mins} minutes.')
+            elif hours < 1:
+                style.write(f'Hope you had a nice nap! You have napped for {mins} minutes.')
+            else:
+                style.write(f'Oh no... You are only rested for {hours} hours and {mins} mins.')
+                       
             
 @st.cache_data
 def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, sleep_grade, remarks):   
@@ -81,7 +115,6 @@ def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, 
             
     # create dataframe for a totally new sleep details
     else:
-        print('No entries has been recorded on this day yet.')
         sleep_data = pd.DataFrame(
             [
                 {
