@@ -7,7 +7,7 @@ import src.utils_styling as style
 
 def create_user_form(data):
     # load in options for entry
-    SLEEP_QUALITY, SLEEP_GRADE, SLEEP_TYPE, SLEEP_START, SLEEP_STOP = constants()
+    SLEEP_TYPE, SLEEP_START, SLEEP_STOP, SLEEP_QUALTIY = constants()
     
     # create the user input form
     with st.form(key='input_form'):
@@ -18,27 +18,21 @@ def create_user_form(data):
         # create field 2 for sleep type
         sleep_type = st.selectbox(label='Sleep Type*', options=SLEEP_TYPE, index=None)
         
-        # create field 3 for sleep duration 
+        # create field 3 & 4 for sleep start/end 
         sleep_range = st.slider(
             label='Sleep Duration*',
             min_value=SLEEP_START,
             max_value=SLEEP_STOP,
             format='HH:mm',
-            value=((SLEEP_START + timedelta(hours=5.5)), SLEEP_STOP - timedelta(hours=9.5)),
+            value=(
+                (SLEEP_START + timedelta(hours=5.5)),   # default to 23:30
+                SLEEP_STOP - timedelta(hours=9.5)       # default to 08:30
+            ),
             step=timedelta(minutes=1)
         )
         
-        # create field 4 for sleep quality
-        sleep_quality = st.slider(
-            label='Sleep Quality',
-            min_value=SLEEP_QUALITY[0],
-            max_value=SLEEP_QUALITY[-2],
-            value=5.0, 
-            step=0.5
-        )
-        
         # create field 5 for sleep grade
-        sleep_grade = st.select_slider(label='Sleep Grade*', options=SLEEP_GRADE, value='C+')
+        sleep_quality = st.select_slider(label='Sleep Quality*', options=SLEEP_QUALTIY, value='C+')
         
         # create field 6 for user remarks
         remarks = st.text_area(label='Remarks')
@@ -52,7 +46,8 @@ def create_user_form(data):
         # actions taken after form submission
         if submit_button:
             # tells the user how long they have slept
-            sleep_time = sleep_range[1] - sleep_range[0]
+            sleep_end, sleep_start = sleep_range[1], sleep_range[0]
+            sleep_time = sleep_end - sleep_start
             total_mins = sleep_time.total_seconds() / 60
             hours = int(total_mins // 60)
             mins = int(total_mins % 60)
@@ -64,9 +59,10 @@ def create_user_form(data):
                 data=data,
                 date=date,
                 sleep_type=sleep_type,
+                sleep_start=sleep_start,
+                sleep_end=sleep_end,
                 sleep_duration=sleep_duration,
                 sleep_quality=sleep_quality,
-                sleep_grade=sleep_grade,
                 remarks=remarks
             )
             
@@ -83,9 +79,13 @@ def create_user_form(data):
                        
             
 @st.cache_data
-def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, sleep_grade, remarks):   
+def user_form_submission(data, date, sleep_type, sleep_start, sleep_end, sleep_duration, sleep_quality, remarks):
+    # convert sleep times to proper hrs and mins
+    sleep_start = sleep_start.strftime('%H:%M')
+    sleep_end = sleep_end.strftime('%H:%M')
+    
     # check if all fields are submitted
-    if not sleep_type or sleep_duration is None or sleep_quality is None or not sleep_grade:
+    if not sleep_type:
         st.warning('Please fill in all required fields.')
         st.stop()
         
@@ -105,9 +105,10 @@ def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, 
                     {
                         'Date': date,
                         'Type': sleep_type,
+                        'Sleep Start': sleep_start,
+                        'Sleep End': sleep_end,
                         'Length': sleep_duration,
                         'Quality': sleep_quality,
-                        'Overall': sleep_grade,
                         'Remarks': remarks
                     }
                 ]
@@ -120,9 +121,10 @@ def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, 
                 {
                     'Date': date,
                     'Type': sleep_type,
+                    'Sleep Start': sleep_start,
+                    'Sleep End': sleep_end,
                     'Length': sleep_duration,
                     'Quality': sleep_quality,
-                    'Overall': sleep_grade,
                     'Remarks': remarks
                 }
             ]
@@ -131,6 +133,8 @@ def user_form_submission(data, date, sleep_type, sleep_duration, sleep_quality, 
     # add new entry to data
     updated_data = pd.concat([data, sleep_data], axis=0, ignore_index=True)
     
+    print(updated_data)
+
     # establish a google sheets connection
     conn = gs.init_connection()
     
