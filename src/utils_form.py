@@ -214,17 +214,28 @@ def user_amend_form(data):
         amended_entry['Sleep Start'] = pd.to_datetime(amended_entry['Sleep Start'], format='%H:%M:%S')
         amended_entry['Sleep End'] = pd.to_datetime(amended_entry['Sleep End'], format='%H:%M:%S')
         
-        # attached the actual dates into Sleep Start/End
+        # attached the actual dates into Sleep Start
         sleep_date = pd.to_datetime(selected_date)
         amended_entry['Sleep Start'] = amended_entry['Sleep Start'].apply(
             lambda x: x.replace(year=sleep_date.year, month=sleep_date.month, day=sleep_date.day)
         )
         
-        wake_date = (pd.to_datetime(selected_date) + pd.DateOffset(days=1)).date()
-        amended_entry['Sleep End'] = amended_entry['Sleep End'].apply(
-            lambda x: x.replace(year=wake_date.year, month=wake_date.month, day=wake_date.day)
-        )
-        
+        # attached the actual dates into Sleep End based on sleep type
+        for index, row in amended_entry.iterrows():
+            if row['Type'] == 'Overnight':
+                wake_date = (pd.to_datetime(selected_date) + pd.DateOffset(days=1)).date()
+                amended_entry.at[index, 'Sleep End'] = row['Sleep End'].replace(
+                        year=wake_date.year,
+                        month=wake_date.month,
+                        day=wake_date.day
+                )
+            elif row['Type'] == 'Nap':
+                amended_entry.at[index, 'Sleep End'] = row['Sleep End'].replace(
+                    year=sleep_date.year,
+                    month=sleep_date.month,
+                    day=sleep_date.day
+                )
+                
         amended_entry['Length'] = (
             amended_entry['Sleep End'] - amended_entry['Sleep Start']
         ).apply(lambda x: x.total_seconds() / 3600)
@@ -247,7 +258,6 @@ def user_amend_form(data):
                 entry_date=selected_date,
                 new_entry=amended_entry,
             )
-            
             
     # when there is only 1 entry for the selected date
     else:       
