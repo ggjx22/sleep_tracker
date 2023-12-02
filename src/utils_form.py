@@ -28,7 +28,7 @@ def create_user_form(data):
                 SLEEP_START + timedelta(hours=5.5),   # default to 23:30
                 SLEEP_STOP - timedelta(hours=9.5)     # default to 08:30
             ),
-            step=timedelta(minutes=1)
+            step=timedelta(minutes=5)
         )
         
         # create field 5 for sleep grade
@@ -286,7 +286,7 @@ def user_amend_form(data):
                     max_value=default_sleep_stop,
                     format='HH:mm',
                     value=(original_sleep_start,original_sleep_end),
-                    step=timedelta(minutes=1)
+                    step=timedelta(minutes=5)
                 )
                 
             elif amend_entry['Type'].iloc[0] == 'Nap':
@@ -308,7 +308,7 @@ def user_amend_form(data):
                     max_value=default_sleep_end_adj,
                     format='HH:mm',
                     value=(original_sleep_start,original_sleep_end),
-                    step=timedelta(minutes=1)
+                    step=timedelta(minutes=5)
                 )
                 
             else:
