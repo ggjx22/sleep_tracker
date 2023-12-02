@@ -66,16 +66,23 @@ def create_user_form(data):
                 remarks=remarks
             )
             
-            if hours >= 16:
-                style.write(f'Are you a polar bear? Because you have hibernated for {hours} hours and {mins} minutes.')
-            elif hours >= 12:
-                style.write(f'Sleeping beauty are you. You have slept for {hours} hours and {mins} minutes.')
-            elif hours >= 8:
-                style.write(f'Well Done! You have slept for {hours} hours and {mins} minutes.')
-            elif hours < 1:
-                style.write(f'Hope you had a nice nap! You have napped for {mins} minutes.')
-            else:
-                style.write(f'Oh no... You are only rested for {hours} hours and {mins} mins.')
+            # inform user on their sleep duration after submission
+            if sleep_type == 'Overnight':
+                if hours >= 16:
+                    style.write(f'Are you a polar bear? Because you have hibernated for {hours} hours and {mins} minutes.')
+                elif hours >= 12:
+                    style.write(f'Sleeping beauty are you. You have slept for {hours} hours and {mins} minutes.')
+                elif hours >= 8:
+                    style.write(f'Well Done! You have slept for {hours} hours and {mins} minutes.')
+                elif hours <= 6:
+                    style.write(f'Oh no... You are only rested for {hours} hours and {mins} mins.')
+            elif sleep_type == 'Nap':
+                if hours >= 5:
+                    style.write(f'Did you went into a deep nap?! It has been {hours} hours and {mins} mins!')
+                elif hours >= 3:
+                    style.write(f'{hours} hours and {mins} mins is a loooooooooooong nap.')
+                elif hours < 3:
+                    style.write(f'Hope the {hours} hours and {mins} mins nap has been a great one!')
                        
             
 @st.cache_data
@@ -133,11 +140,11 @@ def user_form_submission(data, date, sleep_type, sleep_start, sleep_end, sleep_d
     # add new entry to data
     updated_data = pd.concat([data, sleep_data], axis=0, ignore_index=True)
 
-    # establish a google sheets connection
-    conn = gs.init_connection()
+    # # establish a google sheets connection
+    # conn = gs.init_connection()
     
-    # update google sheets with the updated_data
-    conn.update(worksheet='Sheet1', data=updated_data)
+    # # update google sheets with the updated_data
+    # conn.update(worksheet='Sheet1', data=updated_data)
     
     style.write('Sleep details submitted successfully!')
     
