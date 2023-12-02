@@ -83,6 +83,8 @@ def create_user_form(data):
                     style.write(f'{hours} hours and {mins} mins is a loooooooooooong nap.')
                 elif hours < 3:
                     style.write(f'Hope the {hours} hours and {mins} mins nap has been a great one!')
+                    
+            style.write('Thank you for using this web app. I hope you like it!')
                        
             
 @st.cache_data
@@ -140,11 +142,11 @@ def user_form_submission(data, date, sleep_type, sleep_start, sleep_end, sleep_d
     # add new entry to data
     updated_data = pd.concat([data, sleep_data], axis=0, ignore_index=True)
 
-    # # establish a google sheets connection
-    # conn = gs.init_connection()
+    # establish a google sheets connection
+    conn = gs.init_connection()
     
-    # # update google sheets with the updated_data
-    # conn.update(worksheet='Sheet1', data=updated_data)
+    # update google sheets with the updated_data
+    conn.update(worksheet='Sheet1', data=updated_data)
     
     style.write('Sleep details submitted successfully!')
     
