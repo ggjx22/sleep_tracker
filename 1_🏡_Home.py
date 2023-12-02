@@ -11,4 +11,4 @@ style.title('Welcome to the Sleep Tracker Web App.')
 style.text("It's a litte boring now. Stay tuned for more features!")
 
 # web app version
-style.text('Web app release version 1.3.0')
+style.text('Web app release version 1.3.1')
