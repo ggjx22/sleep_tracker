@@ -28,7 +28,7 @@ def create_user_form(data):
                 SLEEP_START + timedelta(hours=5.5),   # default to 23:30
                 SLEEP_STOP - timedelta(hours=9.5)     # default to 08:30
             ),
-            step=timedelta(minutes=1)
+            step=timedelta(minutes=5)
         )
         
         # create field 5 for sleep grade
@@ -66,16 +66,25 @@ def create_user_form(data):
                 remarks=remarks
             )
             
-            if hours >= 16:
-                style.write(f'Are you a polar bear? Because you have hibernated for {hours} hours and {mins} minutes.')
-            elif hours >= 12:
-                style.write(f'Sleeping beauty are you. You have slept for {hours} hours and {mins} minutes.')
-            elif hours >= 8:
-                style.write(f'Well Done! You have slept for {hours} hours and {mins} minutes.')
-            elif hours < 1:
-                style.write(f'Hope you had a nice nap! You have napped for {mins} minutes.')
-            else:
-                style.write(f'Oh no... You are only rested for {hours} hours and {mins} mins.')
+            # inform user on their sleep duration after submission
+            if sleep_type == 'Overnight':
+                if hours >= 16:
+                    style.write(f'Are you a polar bear? Because you have hibernated for {hours} hours and {mins} minutes.')
+                elif hours >= 12:
+                    style.write(f'Sleeping beauty are you. You have slept for {hours} hours and {mins} minutes.')
+                elif hours >= 8:
+                    style.write(f'Well Done! You have slept for {hours} hours and {mins} minutes.')
+                elif hours <= 6:
+                    style.write(f'Oh no... You are only rested for {hours} hours and {mins} mins.')
+            elif sleep_type == 'Nap':
+                if hours >= 5:
+                    style.write(f'Did you went into a deep nap?! It has been {hours} hours and {mins} mins!')
+                elif hours >= 3:
+                    style.write(f'{hours} hours and {mins} mins is a loooooooooooong nap.')
+                elif hours < 3:
+                    style.write(f'Hope the {hours} hours and {mins} mins nap has been a great one!')
+                    
+            style.write('Thank you for using this web app. I hope you like it!')
                        
             
 @st.cache_data
@@ -286,7 +295,7 @@ def user_amend_form(data):
                     max_value=default_sleep_stop,
                     format='HH:mm',
                     value=(original_sleep_start,original_sleep_end),
-                    step=timedelta(minutes=1)
+                    step=timedelta(minutes=5)
                 )
                 
             elif amend_entry['Type'].iloc[0] == 'Nap':
@@ -308,7 +317,7 @@ def user_amend_form(data):
                     max_value=default_sleep_end_adj,
                     format='HH:mm',
                     value=(original_sleep_start,original_sleep_end),
-                    step=timedelta(minutes=1)
+                    step=timedelta(minutes=5)
                 )
                 
             else:
