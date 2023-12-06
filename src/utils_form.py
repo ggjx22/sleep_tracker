@@ -85,6 +85,9 @@ def create_user_form(data):
                     style.write(f'Hope the {hours} hours and {mins} mins nap has been a great one!')
                     
             style.write('Thank you for using this web app. I hope you like it!')
+            
+            # clear cached data
+            st.cache_data.clear()
                        
             
 @st.cache_data
@@ -268,6 +271,9 @@ def user_amend_form(data):
                 new_entry=amended_entry,
             )
             
+        # clear cached data
+            st.cache_data.clear()
+            
     # when there is only 1 entry for the selected date
     else:       
         # display a form pre-filled with original entry details for modification
@@ -364,6 +370,9 @@ def user_amend_form(data):
                     new_entry=amended_entry,
                 )
                 
+            # clear cached data
+            st.cache_data.clear()
+            
                 
 @st.cache_data
 def user_amend_form_submission(data, entry_date, new_entry):
