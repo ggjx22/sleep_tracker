@@ -3,7 +3,7 @@ import src.utils_form as ui_form
 import src.utils_styling as style
 
 # display web page title
-style.title("Record Previous Night's Details.")
+style.title("Submit Your Sleep Records.")
 
 # fetch data from google sheets
 data = gs.fetch_data()
