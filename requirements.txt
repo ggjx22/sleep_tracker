@@ -1,4 +1,5 @@
 st-gsheets-connection==0.0.3
-streamlit==1.28.2
+streamlit==1.29.0
 watchdog==3.0.0
 streamlit_option_menu==0.3.6
+google-api-python-client==2.109.0

@@ -12,24 +12,44 @@ def create_user_form(data):
     # create the user input form
     with st.form(key='input_form'):
         # create field 1 for date input
-        date = st.date_input(label='Date Recorded in YYYY-MM-DD')
-        date = date.strftime('%Y-%m-%d')
+        date = st.date_input(label='Recording date*').strftime('%Y-%m-%d')
         
         # create field 2 for sleep type
         sleep_type = st.selectbox(label='Sleep Type*', options=SLEEP_TYPE, index=None)
         
-        # create field 3 & 4 for sleep start/end 
-        sleep_range = st.slider(
-            label='Sleep Duration*',
-            min_value=SLEEP_START,
-            max_value=SLEEP_STOP,
-            format='HH:mm',
-            value=(
-                SLEEP_START + timedelta(hours=5.5),   # default to 23:30
-                SLEEP_STOP - timedelta(hours=9.5)     # default to 08:30
-            ),
-            step=timedelta(minutes=5)
-        )
+        # create 2 columns for  field 3 and 4 for sleeping range
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write('Sleep Date*')
+            sleep_start_date = st.date_input(label=':night_with_stars:')
+        
+        with col2:
+            st.write('Sleep Time*')
+            sleep_start_time = st.time_input(
+                label=':sleeping_accommodation:',
+                value=SLEEP_START + timedelta(hours=5.5),
+                step=timedelta(minutes=5)
+            )
+        
+        sleep_start = datetime.combine(sleep_start_date, sleep_start_time)
+        
+        with col1:
+            st.write('Wake Up Date*')
+            sleep_end_date = st.date_input(
+                label=':sunrise:',
+                value=datetime.today() + timedelta(days=1)
+            )
+        
+        with col2:
+            st.write('Wake Up Time*')
+            sleep_end_time = st.time_input(
+                label=':dancer:',
+                value=SLEEP_STOP - timedelta(hours=9.5),
+                step=timedelta(minutes=5)
+            )
+        
+        sleep_end = datetime.combine(sleep_end_date, sleep_end_time)
         
         # create field 5 for sleep grade
         sleep_quality = st.select_slider(label='Sleep Quality*', options=SLEEP_QUALTIY, value='C+')
@@ -46,7 +66,7 @@ def create_user_form(data):
         # actions taken after form submission
         if submit_button:
             # tells the user how long they have slept
-            sleep_end, sleep_start = sleep_range[1], sleep_range[0]
+            # sleep_end, sleep_start = sleep_range[1], sleep_range[0]
             sleep_time = sleep_end - sleep_start
             total_mins = sleep_time.total_seconds() / 60
             hours = int(total_mins // 60)
@@ -59,8 +79,8 @@ def create_user_form(data):
                 data=data,
                 date=date,
                 sleep_type=sleep_type,
-                sleep_start=sleep_start,
-                sleep_end=sleep_end,
+                sleep_start=sleep_start.time(),
+                sleep_end=sleep_end.time(),
                 sleep_duration=sleep_duration,
                 sleep_quality=sleep_quality,
                 remarks=remarks
@@ -85,9 +105,11 @@ def create_user_form(data):
                     style.write(f'Hope the {hours} hours and {mins} mins nap has been a great one!')
                     
             style.write('Thank you for using this web app. I hope you like it!')
+            
+            # clear cached data
+            st.cache_data.clear()
                        
             
-@st.cache_data
 def user_form_submission(data, date, sleep_type, sleep_start, sleep_end, sleep_duration, sleep_quality, remarks):
     # convert sleep times to proper hrs and mins
     sleep_start = sleep_start.strftime('%H:%M')
@@ -268,6 +290,9 @@ def user_amend_form(data):
                 new_entry=amended_entry,
             )
             
+        # clear cached data
+            st.cache_data.clear()
+            
     # when there is only 1 entry for the selected date
     else:       
         # display a form pre-filled with original entry details for modification
@@ -364,8 +389,10 @@ def user_amend_form(data):
                     new_entry=amended_entry,
                 )
                 
+            # clear cached data
+            st.cache_data.clear()
+            
                 
-@st.cache_data
 def user_amend_form_submission(data, entry_date, new_entry):
     
     # check datatype of new_entry
