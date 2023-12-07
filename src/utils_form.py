@@ -90,7 +90,6 @@ def create_user_form(data):
             st.cache_data.clear()
                        
             
-@st.cache_data
 def user_form_submission(data, date, sleep_type, sleep_start, sleep_end, sleep_duration, sleep_quality, remarks):
     # convert sleep times to proper hrs and mins
     sleep_start = sleep_start.strftime('%H:%M')
@@ -374,7 +373,6 @@ def user_amend_form(data):
             st.cache_data.clear()
             
                 
-@st.cache_data
 def user_amend_form_submission(data, entry_date, new_entry):
     
     # check datatype of new_entry
