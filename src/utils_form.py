@@ -11,8 +11,8 @@ def create_user_form(data):
     
     # create the user input form
     with st.form(key='input_form'):
-        # create field 1 for date input
-        date = st.date_input(label='Recording date*').strftime('%Y-%m-%d')
+        # create field 1 for record date input
+        record_date = st.date_input(label='Recording date*').strftime('%Y-%m-%d')
         
         # create field 2 for sleep type
         sleep_type = st.selectbox(label='Sleep Type*', options=SLEEP_TYPE, index=None)
@@ -36,10 +36,7 @@ def create_user_form(data):
         
         with col1:
             st.write('Wake Up Date*')
-            sleep_end_date = st.date_input(
-                label=':sunrise:',
-                value=datetime.today() + timedelta(days=1)
-            )
+            sleep_end_date = st.date_input(label=':sunrise:')
         
         with col2:
             st.write('Wake Up Time*')
@@ -66,7 +63,6 @@ def create_user_form(data):
         # actions taken after form submission
         if submit_button:
             # tells the user how long they have slept
-            # sleep_end, sleep_start = sleep_range[1], sleep_range[0]
             sleep_time = sleep_end - sleep_start
             total_mins = sleep_time.total_seconds() / 60
             hours = int(total_mins // 60)
@@ -77,10 +73,12 @@ def create_user_form(data):
             
             user_form_submission(
                 data=data,
-                date=date,
+                record_date=record_date,
                 sleep_type=sleep_type,
-                sleep_start=sleep_start.time(),
-                sleep_end=sleep_end.time(),
+                sleep_start_date=sleep_start_date,
+                sleep_start_time=sleep_start_time,
+                sleep_end_date=sleep_end_date,
+                sleep_end_time=sleep_end_time,
                 sleep_duration=sleep_duration,
                 sleep_quality=sleep_quality,
                 remarks=remarks
@@ -110,10 +108,21 @@ def create_user_form(data):
             st.cache_data.clear()
                        
             
-def user_form_submission(data, date, sleep_type, sleep_start, sleep_end, sleep_duration, sleep_quality, remarks):
+def user_form_submission(
+    data,
+    record_date,
+    sleep_type,
+    sleep_start_date,
+    sleep_start_time,
+    sleep_end_date,
+    sleep_end_time,
+    sleep_duration,
+    sleep_quality,
+    remarks
+):
     # convert sleep times to proper hrs and mins
-    sleep_start = sleep_start.strftime('%H:%M')
-    sleep_end = sleep_end.strftime('%H:%M')
+    sleep_start_time = sleep_start_time.strftime('%H:%M')
+    sleep_end_time = sleep_end_time.strftime('%H:%M')
     
     # check if all fields are submitted
     if not sleep_type:
@@ -121,9 +130,9 @@ def user_form_submission(data, date, sleep_type, sleep_start, sleep_end, sleep_d
         st.stop()
         
     # check if the date is already recorded
-    elif (data['Date'].astype(str) == date).any():
+    elif (data['Record Date'].astype(str) == record_date).any():
         # check the type of sleep
-        if sleep_type == 'Overnight' and 'Overnight' in data[data['Date'] == date]['Type'].unique():
+        if sleep_type == 'Overnight' and 'Overnight' in data[data['Record Date'] == record_date]['Type'].unique():
             st.warning(
                 f'You have already recorded your details for an Overnight sleep on this date. '
                 f'Head over to the Amend Details page if you will like to edit any of your details.'
@@ -134,10 +143,12 @@ def user_form_submission(data, date, sleep_type, sleep_start, sleep_end, sleep_d
             sleep_data = pd.DataFrame(
                 [
                     {
-                        'Date': date,
+                        'Record Date': record_date,
                         'Type': sleep_type,
-                        'Sleep Start': sleep_start,
-                        'Sleep End': sleep_end,
+                        'Sleep Start Date': sleep_start_date,
+                        'Sleep Start Time': sleep_start_time,
+                        'Sleep End Date': sleep_end_date,
+                        'Sleep End Time': sleep_end_time,
                         'Length': sleep_duration,
                         'Quality': sleep_quality,
                         'Remarks': remarks
@@ -150,10 +161,12 @@ def user_form_submission(data, date, sleep_type, sleep_start, sleep_end, sleep_d
         sleep_data = pd.DataFrame(
             [
                 {
-                    'Date': date,
+                    'Record Date': record_date,
                     'Type': sleep_type,
-                    'Sleep Start': sleep_start,
-                    'Sleep End': sleep_end,
+                    'Sleep Start Date': sleep_start_date,
+                    'Sleep Start Time': sleep_start_time,
+                    'Sleep End Date': sleep_end_date,
+                    'Sleep End Time': sleep_end_time,
                     'Length': sleep_duration,
                     'Quality': sleep_quality,
                     'Remarks': remarks
