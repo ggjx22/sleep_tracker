@@ -12,7 +12,7 @@ def fetch_data():
     conn = init_connection()
 
     # fetch existing sleep data from google sheets
-    existing_data = conn.read(worksheet='Sheet1', usecols=list(range(7)))
+    existing_data = conn.read(worksheet='Sheet1', usecols=list(range(9)))
     existing_data = existing_data.dropna(how='all')
     
     return existing_data
