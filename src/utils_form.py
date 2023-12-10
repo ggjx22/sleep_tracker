@@ -175,24 +175,23 @@ def user_form_submission(data, date, sleep_type, sleep_start, sleep_end, sleep_d
 
 def user_amend_form(data):
     # create a dropdown menu to select a date to amend
-    sorted_date = data['Date'].sort_values(ascending=False).unique()
-    selected_date = st.selectbox('Select a date to amend your details', sorted_date)
+    sorted_date = data['Record Date'].sort_values(ascending=False).unique()
+    selected_date = st.selectbox('To amend details, select the date when you record your details.', sorted_date)
     
-    style.write(f'Displaying your records for {selected_date}.')
+    style.write(f'Displaying details recorded on {selected_date}.')
     
     # retrieve the sleep details for the selected date
-    selected_entry = (
+    amend_entry = (
         data
-        .loc[(data['Date'] == selected_date), :]
+        .loc[(data['Record Date'] == selected_date), :]
         .fillna('NA')
     )
-    
-    # remove length column for amend form
-    amend_entry = selected_entry.drop(columns=['Length'], axis=1)
-    
-    # convert Sleep Start/End column to datetime.time format
-    amend_entry['Sleep Start'] = pd.to_datetime(amend_entry['Sleep Start']).dt.time
-    amend_entry['Sleep End'] = pd.to_datetime(amend_entry['Sleep End']).dt.time
+        
+    # convert Sleep Start/End column to datetime format
+    amend_entry['Sleep Start Date'] = pd.to_datetime(amend_entry['Sleep Start Date'])
+    amend_entry['Sleep End Date'] = pd.to_datetime(amend_entry['Sleep End Date'])
+    amend_entry['Sleep Start Time'] = pd.to_datetime(amend_entry['Sleep Start Time'], format='%H:%M').dt.time
+    amend_entry['Sleep End Time'] = pd.to_datetime(amend_entry['Sleep End Time'], format='%H:%M').dt.time
 
     # load in options for entry
     SLEEP_TYPE, SLEEP_START, SLEEP_STOP, SLEEP_QUALITY = constants()
@@ -200,34 +199,43 @@ def user_amend_form(data):
     # form changes based on the number of entries for the selected date
     if len(amend_entry) > 1:
         # table-like editor
-        style.write('You have multiple entries during this day. Select the details of which you want to edit.')
+        style.write('You have multiple entries during this date. Select the details of which you want to edit.')
         
         # convert Date column to datetime format
-        amend_entry['Date'] = pd.to_datetime(amend_entry['Date']).dt.date
+        amend_entry['Record Date'] = pd.to_datetime(amend_entry['Record Date']).dt.date
         
         amended_entry = st.data_editor(
             data=amend_entry,
             use_container_width=True,
+            column_order=(
+                'Type', 'Sleep Start Date', 'Sleep Start Time',
+                'Sleep End Date', 'Sleep End Time', 'Quality',
+                'Remarks'
+            ),
             hide_index=True,
             num_rows='dynamic',
             column_config={
-                'Date': st.column_config.Column(
-                    label='Date*',
-                    disabled=True
-                ),
                 'Type': st.column_config.SelectboxColumn(
                     label='Type*',
                     options=SLEEP_TYPE,
                     required=True
                 ),
-                'Sleep Start': st.column_config.TimeColumn(
-                    label='Sleep Start*',
+                'Sleep Start Date': st.column_config.DateColumn(
+                    label='Sleep Start Date*',
                     required=True,
+                ),
+                'Sleep Start Time': st.column_config.TimeColumn(
+                    label='Sleep Start Time*',
+                    format='HH:ss',
                     step=60
                 ),
-                'Sleep End': st.column_config.TimeColumn(
-                    label='Sleep End*',
+                'Sleep End Date': st.column_config.DateColumn(
+                    label='Sleep Start Date*',
                     required=True,
+                ),
+                'Sleep End Time': st.column_config.TimeColumn(
+                    label='Sleep Start Time*',
+                    format='HH:ss',
                     step=60
                 ),
                 'Quality': st.column_config.SelectboxColumn(
@@ -242,43 +250,15 @@ def user_amend_form(data):
         style.markdown('*Required Fields')
         
         # calculate sleep duration
-        amended_entry['Sleep Start'] = pd.to_datetime(amended_entry['Sleep Start'], format='%H:%M:%S')
-        amended_entry['Sleep End'] = pd.to_datetime(amended_entry['Sleep End'], format='%H:%M:%S')
+        amended_entry['Sleep Start Date'] = amended_entry['Sleep Start Date'].astype(str)
+        amended_entry['Sleep End Date'] = amended_entry['Sleep End Date'].astype(str)
+        amended_entry['Sleep Start Time'] = amended_entry['Sleep Start Time'].apply(lambda x: x.strftime('%H:%M'))
+        amended_entry['Sleep End Time'] = amended_entry['Sleep End Time'].apply(lambda x: x.strftime('%H:%M'))
         
-        # attached the actual dates into Sleep Start
-        sleep_date = pd.to_datetime(selected_date)
-        amended_entry['Sleep Start'] = amended_entry['Sleep Start'].apply(
-            lambda x: x.replace(year=sleep_date.year, month=sleep_date.month, day=sleep_date.day)
-        )
+        sleep_start = pd.to_datetime(amended_entry['Sleep Start Date'] + ' ' + amended_entry['Sleep Start Time'])
+        sleep_end = pd.to_datetime(amended_entry['Sleep End Date'] + ' ' + amended_entry['Sleep End Time'])
         
-        # attached the actual dates into Sleep End based on sleep type
-        for index, row in amended_entry.iterrows():
-            if row['Type'] == 'Overnight':
-                wake_date = (pd.to_datetime(selected_date) + pd.DateOffset(days=1)).date()
-                amended_entry.at[index, 'Sleep End'] = row['Sleep End'].replace(
-                        year=wake_date.year,
-                        month=wake_date.month,
-                        day=wake_date.day
-                )
-            elif row['Type'] == 'Nap':
-                amended_entry.at[index, 'Sleep End'] = row['Sleep End'].replace(
-                    year=sleep_date.year,
-                    month=sleep_date.month,
-                    day=sleep_date.day
-                )
-                
-        amended_entry['Length'] = (
-            amended_entry['Sleep End'] - amended_entry['Sleep Start']
-        ).apply(lambda x: x.total_seconds() / 3600)
-        
-        # only keep date component of Sleep Start/End
-        amended_entry['Sleep Start'] = amended_entry['Sleep Start'].dt.time
-        amended_entry['Sleep End'] = amended_entry['Sleep End'].dt.time
-        
-        # rearrange columns
-        amended_entry = amended_entry[
-            ['Date', 'Type', 'Sleep Start', 'Sleep End', 'Length', 'Quality', 'Remarks']
-        ]
+        amended_entry['Length'] = ((sleep_end - sleep_start) / pd.Timedelta(seconds=3600)).round(2)
         
         # submit the amended entry
         submit_button = st.button('Submit Your New Sleep Details')
@@ -290,7 +270,7 @@ def user_amend_form(data):
                 new_entry=amended_entry,
             )
             
-        # clear cached data
+            # clear cached data
             st.cache_data.clear()
             
     # when there is only 1 entry for the selected date
@@ -303,51 +283,43 @@ def user_amend_form(data):
                 options=SLEEP_TYPE,
                 index=SLEEP_TYPE.index(amend_entry['Type'].iloc[0])
             )
-
-            # create field 2 for sleep length amendment
-            if amend_entry['Type'].iloc[0] == 'Overnight':
-                # get original sleep days and time
-                original_sleep_start = datetime.combine(pd.to_datetime(selected_date), amend_entry['Sleep Start'].iloc[0])
-                original_sleep_end = datetime.combine(pd.to_datetime(selected_date), amend_entry['Sleep End'].iloc[0]) + timedelta(days=1)
-                
-                # define default sleep range for that day
-                default_sleep_start = datetime.combine(pd.to_datetime(selected_date), SLEEP_START.time())
-                default_sleep_stop = datetime.combine(pd.to_datetime(selected_date), SLEEP_STOP.time()) + timedelta(days=1)
-                
-                new_sleep_range = st.slider(
-                    label='Sleep Duration*',
-                    min_value=default_sleep_start,
-                    max_value=default_sleep_stop,
-                    format='HH:mm',
-                    value=(original_sleep_start,original_sleep_end),
+            
+            # create 2 columns for  field 3 and 4 for sleeping range amendment
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write('Sleep Date*')
+                new_sleep_start_date = st.date_input(
+                    label=':night_with_stars:',
+                    value=amend_entry['Sleep Start Date'].iloc[0]
+                )
+            
+            with col2:
+                st.write('Sleep Time*')
+                new_sleep_start_time = st.time_input(
+                    label=':sleeping_accommodation:',
+                    value=amend_entry['Sleep Start Time'].iloc[0],
                     step=timedelta(minutes=5)
                 )
                 
-            elif amend_entry['Type'].iloc[0] == 'Nap':
-                # get original sleep days and time
-                original_sleep_start = datetime.combine(pd.to_datetime(selected_date), amend_entry['Sleep Start'].iloc[0])
-                original_sleep_end = datetime.combine(pd.to_datetime(selected_date), amend_entry['Sleep End'].iloc[0])
+            new_sleep_start = datetime.combine(new_sleep_start_date, new_sleep_start_time)
                 
-                # define default sleep range for that day 
-                hours_before_day_start = pd.to_datetime(selected_date) - original_sleep_start
-                default_sleep_start_adj = original_sleep_start + hours_before_day_start
-
-                hours_before_day_end = pd.to_datetime(selected_date) + timedelta(days=1) - original_sleep_end
-                default_sleep_end_adj = original_sleep_end + hours_before_day_end
-
-                
-                new_sleep_range = st.slider(
-                    label='Sleep Duration*',
-                    min_value=default_sleep_start_adj,
-                    max_value=default_sleep_end_adj,
-                    format='HH:mm',
-                    value=(original_sleep_start,original_sleep_end),
+            with col1:
+                st.write('Wake Up Date*')
+                new_sleep_end_date = st.date_input(
+                    label=':sunrise:',
+                    value=amend_entry['Sleep End Date'].iloc[0]
+                )
+        
+            with col2:
+                st.write('Wake Up Time*')
+                new_sleep_end_time = st.time_input(
+                    label=':dancer:',
+                    value=amend_entry['Sleep End Time'].iloc[0],
                     step=timedelta(minutes=5)
                 )
                 
-            else:
-                st.warning(f'{amend_entry.iloc[0]} is not a valid Sleep Type.')
-                st.stop()
+            new_sleep_end = datetime.combine(new_sleep_end_date, new_sleep_end_time)
                 
             # create field 3 for sleep quality amendment
             new_sleep_quality = st.select_slider(
@@ -362,18 +334,21 @@ def user_amend_form(data):
             # mark mandatory fields
             style.markdown('*Required Fields')
             
-            # calculate sleep duration
-            new_sleep_end, new_sleep_start = new_sleep_range[1], new_sleep_range[0]
-            sleep_time = new_sleep_end - new_sleep_start
-            new_sleep_duration = round(sleep_time.total_seconds() / 3600, 1)
+            # calculate new sleep duration
+            new_sleep_length = new_sleep_end - new_sleep_start
+                       
+            # convert sleep time into floats for form submission
+            new_sleep_length = round(new_sleep_length.total_seconds() / 3600, 2)
             
             # put amended details into a dictionary
             amended_entry = {
-                'Date': selected_date,
+                'Record Date': selected_date,
                 'Type': new_sleep_type,
-                'Sleep Start': new_sleep_start.strftime('%H:%M'),
-                'Sleep End': new_sleep_end.strftime('%H:%M'),
-                'Length': new_sleep_duration,
+                'Sleep Start Date': new_sleep_start_date,
+                'Sleep Start Time':new_sleep_start_time.strftime('%H:%M'),
+                'Sleep End Date': new_sleep_end_date,
+                'Sleep End Time':new_sleep_end_time.strftime('%H:%M'),
+                'Length': new_sleep_length,
                 'Quality': new_sleep_quality,
                 'Remarks': new_remarks,
             }
@@ -389,34 +364,35 @@ def user_amend_form(data):
                     new_entry=amended_entry,
                 )
                 
-            # clear cached data
-            st.cache_data.clear()
+                # clear cached data
+                st.cache_data.clear()
             
                 
 def user_amend_form_submission(data, entry_date, new_entry):
     
     # check datatype of new_entry
     if type(new_entry) == pd.DataFrame:
-        # ensure date column is in datetime format
-        data['Date'] = data['Date'].astype('str')
-        new_entry['Date'] = new_entry['Date'].astype('str')
-
+        
+        # convert columns to similar datatypes
+        new_entry['Record Date'] = new_entry['Record Date'].astype(str)
+        
         # filter away old_entry from data using entry_date
-        data = data[data['Date'] != entry_date]
+        data = data[data['Record Date'] != entry_date]
         
         # concat new_entry to data
         data = (
             pd
             .concat([data, new_entry], axis=0, ignore_index=True)
-            .sort_values(by='Date', ascending=True)
+            .sort_values(by='Record Date', ascending=True)
         )
-        
+
     elif type(new_entry) == dict:
+
         # convert dictionary to dataframe
         new_entry = pd.DataFrame(new_entry, index=[0])
         
-        # update the selected_date entry with amended_sleep_data
-        data[data['Date'] == entry_date] = new_entry.iloc[0].values
+        # update the selected_date entry with new_entry
+        data[data['Record Date'] == entry_date] = new_entry.iloc[0].values
         
     # establish a google sheets connection
     conn = gs.init_connection()
