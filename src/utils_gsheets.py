@@ -1,18 +1,24 @@
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 
-def init_connection():
-    # establishing a google sheets connection
-    conn = st.connection('gsheets', type=GSheetsConnection)
+class GSheetsManager:
+    def __init__(self):
+        self.conn = self.init_connection()
+        
+    def init_connection(self):
+        return st.connection('gsheets', type=GSheetsConnection)
     
-    return conn
+    def fetch_data(self, worksheet_name=None):
+        if worksheet_name is None:
+            raise ValueError('Please provide a worksheet name.')
+        
+        data = self.conn.read(worksheet=worksheet_name, usecols=list(range(9)))
+        data = data.dropna(how='all')
+        
+        return data
     
-def fetch_data():
-    # establishing a google sheets connection
-    conn = init_connection()
-
-    # fetch existing sleep data from google sheets
-    existing_data = conn.read(worksheet='Sheet1', usecols=list(range(9)))
-    existing_data = existing_data.dropna(how='all')
-    
-    return existing_data
+    def update_data(self, updated_data, worksheet_name=None):
+        if worksheet_name is None:
+            raise ValueError('Please provide a worksheet name.')
+        
+        self.conn.update(worksheet=worksheet_name, data=updated_data)
