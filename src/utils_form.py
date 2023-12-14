@@ -5,6 +5,9 @@ import src.utils_gsheets as gs
 from src.config import constants
 import src.utils_styling as style
 
+# init connection with google sheet
+gs_manager = gs.GSheetsManager()
+
 def create_user_form(data):
     # load in options for entry
     SLEEP_TYPE, SLEEP_START, SLEEP_STOP, SLEEP_QUALTIY = constants()
@@ -176,12 +179,9 @@ def user_form_submission(
     
     # add new entry to data
     updated_data = pd.concat([data, sleep_data], axis=0, ignore_index=True)
-
-    # establish a google sheets connection
-    conn = gs.init_connection()
     
     # update google sheets with the updated_data
-    conn.update(worksheet='Sheet1', data=updated_data)
+    gs_manager.update_data(updated_data=updated_data, worksheet_name='sleep')
     
     style.write('Sleep details submitted successfully!')
     
@@ -406,12 +406,9 @@ def user_amend_form_submission(data, entry_date, new_entry):
         
         # update the selected_date entry with new_entry
         data[data['Record Date'] == entry_date] = new_entry.iloc[0].values
-        
-    # establish a google sheets connection
-    conn = gs.init_connection()
     
     # update google sheets
-    conn.update(worksheet='Sheet1', data=data)
+    gs_manager.update_data(updated_data=data, worksheet_name='sleep')
     
     style.write('New sleep details amended successfully!')
     
