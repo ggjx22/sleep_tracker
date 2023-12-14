@@ -5,8 +5,9 @@ import src.utils_styling as style
 # display web page title
 style.title("Amend Your Sleep Records.")
 
-# fetch data from google sheets
-data = gs.fetch_data()
+# init connection with google sheet and fetch data
+gs_manager = gs.GSheetsManager()
+data = gs_manager.fetch_data(worksheet_name='sleep')
 
 # retrieve records and amend based on date selection
 ui_form.user_amend_form(data)
