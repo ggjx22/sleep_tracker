@@ -26,12 +26,39 @@ The following tools are used for building this project.
 | [Streamlit](https://streamlit.io/) | Framework to build and deploy web app |
 
 ## Getting Started
+This tutorial is reference from this [YouTube video](https://www.youtube.com/watch?v=_G5f7og_Dpo&t=249s) and the [gsheets-connection repo](https://github.com/streamlit/gsheets-connection/tree/main). Shout out to [Sven](https://github.com/Sven-Bo) for making this tutorial easily digestible.
 
+### 1. Setting up workspace virtual environment
+
+- Open up your command prompt or bash terminal and go into your preferred location where you want to work on this project and create a directory.
+  ```bash
+  cd workspace
+  mkdir sleep_tracker
+  cd sleep_tracker
+  ```
+
+- Create a virtual environment
+  ```bash
+  pip install virtualenv
+  virtualenv venv
+  ```
+
+- Activate the virtual environment
+  ```bash
+  # if you are on Windows OS
+  source venv/Scripts/activate
+
+  # if you are on Mac OS
+  source venv/bin/activate
+  ```
+
+- Install the following basic packages needed for this project
+  ```bash
+  pip install st-gsheets-connection streamlit pandas
+  ```
+
+### 2. Enable access for two APIs (google drive and sheets).
 From here onwards, you should already have a valid google account and signed in to it.
-
-### 1. Enable access for two APIs (google drive and sheets).
-
-We do this so that we can connect google sheets with the streamlit app.
 
 - Go to [Google Developer Console](https://console.cloud.google.com/projectselector2/apis/dashboard?supportedpurview=project) and complete the following tasks.
   - Create a new project.<br>
